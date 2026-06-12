@@ -203,6 +203,7 @@ const emit = defineEmits(['changed'])
 const appointments = ref([])
 const cancelRule = ref(null)
 const message = ref('')
+const now = ref(Date.now())
 const initialStart = addHours(new Date(), 24)
 const form = reactive({
   student_id: '',
@@ -234,11 +235,31 @@ let countdownTimer = null
 const activeCoaches = computed(() => props.coaches.filter((coach) => coach.active))
 
 function getCountdown(startTime) {
-  return formatCountdown(startTime)
+  const target = new Date(startTime)
+  const diff = target.getTime() - now.value
+  if (diff <= 0) {
+    return { text: '已开课', totalHours: 0, isPast: true }
+  }
+  const totalMinutes = Math.floor(diff / (1000 * 60))
+  const days = Math.floor(totalMinutes / (60 * 24))
+  const hours = Math.floor((totalMinutes % (60 * 24)) / 60)
+  const minutes = totalMinutes % 60
+  const totalHours = diff / (1000 * 60 * 60)
+
+  let text = ''
+  if (days > 0) {
+    text = `${days}天${hours}小时${minutes}分钟`
+  } else if (hours > 0) {
+    text = `${hours}小时${minutes}分钟`
+  } else {
+    text = `${minutes}分钟`
+  }
+
+  return { text, totalHours, isPast: false }
 }
 
 function isNearBreach(startTime) {
-  const countdown = formatCountdown(startTime)
+  const countdown = getCountdown(startTime)
   const minHours = cancelRule.value?.min_hours_before_start ?? 2
   return !countdown.isPast && countdown.totalHours < minHours
 }
@@ -268,8 +289,9 @@ async function loadCancelRule() {
 }
 
 function refreshCountdowns() {
+  now.value = Date.now()
   if (cancelModal.visible && cancelModal.appointment) {
-    const cd = formatCountdown(cancelModal.appointment.start_time)
+    const cd = getCountdown(cancelModal.appointment.start_time)
     cancelModal.countdownText = cd.isPast ? '已开课' : cd.text
   }
 }
@@ -304,7 +326,8 @@ async function submit() {
 }
 
 function openCancelModal(appointment) {
-  const countdown = formatCountdown(appointment.start_time)
+  now.value = Date.now()
+  const countdown = getCountdown(appointment.start_time)
   const minHours = cancelRule.value?.min_hours_before_start ?? 2
   cancelModal.visible = true
   cancelModal.appointment = appointment
@@ -359,7 +382,7 @@ async function confirmCancel() {
 onMounted(() => {
   load()
   loadCancelRule()
-  countdownTimer = setInterval(refreshCountdowns, 30000)
+  countdownTimer = setInterval(refreshCountdowns, 60000)
 })
 
 onBeforeUnmount(() => {
