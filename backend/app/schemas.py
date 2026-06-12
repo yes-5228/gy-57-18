@@ -12,6 +12,8 @@ class StudentCreate(BaseModel):
 
 class StudentRead(StudentCreate):
     id: int
+    breach_count: int = 0
+    last_breach_at: datetime | None = None
 
 
 class CoachCreate(BaseModel):
@@ -53,6 +55,7 @@ class AppointmentRead(BaseModel):
     created_at: datetime
     cancelled_at: datetime | None = None
     cancel_reason: str | None = None
+    is_breach: bool = False
 
 
 class AppointmentCancel(BaseModel):

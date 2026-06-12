@@ -27,6 +27,8 @@
               <th>姓名</th>
               <th>电话</th>
               <th>剩余课时</th>
+              <th>违约次数</th>
+              <th>最近违约时间</th>
             </tr>
           </thead>
           <tbody>
@@ -34,6 +36,12 @@
               <td>{{ student.name }}</td>
               <td>{{ student.phone }}</td>
               <td>{{ student.remaining_hours }}h</td>
+              <td>
+                <span :class="['breach-count', student.breach_count > 0 && 'has-breach']">
+                  {{ student.breach_count || 0 }}
+                </span>
+              </td>
+              <td>{{ student.last_breach_at ? formatDateTime(student.last_breach_at) : '—' }}</td>
             </tr>
           </tbody>
         </table>
@@ -46,6 +54,7 @@
 import { reactive } from 'vue'
 import { UserPlus } from 'lucide-vue-next'
 import { studentApi } from '../api/modules'
+import { formatDateTime } from '../utils/date'
 
 defineProps({
   students: {
@@ -69,3 +78,13 @@ async function submit() {
   emit('changed')
 }
 </script>
+
+<style scoped>
+.breach-count {
+  font-weight: 500;
+}
+.breach-count.has-breach {
+  color: #dc2626;
+  font-weight: 700;
+}
+</style>

@@ -14,6 +14,8 @@ class Student(BaseModel):
     name: str
     phone: str
     remaining_hours: int = Field(ge=0)
+    breach_count: int = Field(default=0, ge=0)
+    last_breach_at: datetime | None = None
 
 
 class Coach(BaseModel):
@@ -35,6 +37,7 @@ class Appointment(BaseModel):
     created_at: datetime
     cancelled_at: datetime | None = None
     cancel_reason: str | None = None
+    is_breach: bool = False
 
 
 class CancelRule(BaseModel):

@@ -61,7 +61,7 @@
               <td>{{ formatDateTime(item.start_time) }} - {{ formatDateTime(item.end_time) }}</td>
               <td>{{ item.student_name }}</td>
               <td>{{ item.coach_name }}</td>
-              <td><StatusBadge :status="item.status" /></td>
+              <td><StatusBadge :status="item.status" :is-breach="item.is_breach" /></td>
               <td>
                 <button
                   class="ghost danger"
@@ -140,8 +140,12 @@ async function submit() {
 async function cancel(id) {
   message.value = ''
   try {
-    await appointmentApi.cancel(id, '前端操作取消')
-    message.value = '预约已取消'
+    const result = await appointmentApi.cancel(id, '前端操作取消')
+    if (result.is_breach) {
+      message.value = '预约已取消（临近开课取消，记为违约）'
+    } else {
+      message.value = '预约已取消'
+    }
     await load()
     emit('changed')
   } catch (error) {

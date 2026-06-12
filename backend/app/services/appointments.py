@@ -22,6 +22,7 @@ def appointment_to_read(appointment: Appointment) -> AppointmentRead:
         created_at=appointment.created_at,
         cancelled_at=appointment.cancelled_at,
         cancel_reason=appointment.cancel_reason,
+        is_breach=appointment.is_breach,
     )
 
 
@@ -93,14 +94,18 @@ def cancel_appointment(appointment_id: int, reason: str) -> AppointmentRead:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Completed appointments cannot be cancelled")
 
     hours_before_start = (appointment.start_time - datetime.now()).total_seconds() / 3600
-    if hours_before_start < cancel_rule.min_hours_before_start:
-        raise HTTPException(
-            status.HTTP_400_BAD_REQUEST,
-            f"Appointments must be cancelled at least {cancel_rule.min_hours_before_start} hours in advance",
-        )
+    is_breach = hours_before_start < cancel_rule.min_hours_before_start
 
     appointment.status = AppointmentStatus.cancelled
     appointment.cancelled_at = datetime.now()
     appointment.cancel_reason = reason
+    appointment.is_breach = is_breach
     appointments[appointment.id] = appointment
+
+    if is_breach:
+        student = students[appointment.student_id]
+        student.breach_count += 1
+        student.last_breach_at = datetime.now()
+        students[student.id] = student
+
     return appointment_to_read(appointment)
